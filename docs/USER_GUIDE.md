@@ -128,3 +128,7 @@ The result shows the reason for each language that fails; the other languages st
 | *Too many requests* | Wait a moment and start again. Languages already done are kept. |
 | *Your Supertext translation limit is exceeded* | Your Supertext plan's volume is used up; tell your administrator. |
 | *Your session has expired* / *HubSpot refused the connection* | Connect HubSpot again on the app's start page. |
+
+## Support
+
+Questions, problems or ideas: use the [Supertext support form](https://integrations.supertext.com/en/support?platform=hubspot). Mention the version of HubSpot and of the plugin, what you did and what you expected; an error message helps a lot. You get an answer by email, in your language.
