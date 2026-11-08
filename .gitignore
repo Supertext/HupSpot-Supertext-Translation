@@ -3,3 +3,5 @@ dist/
 .env
 coverage/
 tests/docs/out/
+tests/docs/movie/out/
+tests/docs/movie/voice/

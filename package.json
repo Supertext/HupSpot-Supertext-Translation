@@ -16,7 +16,9 @@
     "test": "vitest run",
     "hubspot:probe": "tsx scripts/probe.ts",
     "standin": "tsx tests/standin/server.ts",
-    "docs:screenshots": "tsx tests/docs/screenshots.ts"
+    "docs:screenshots": "tsx tests/docs/screenshots.ts",
+    "docs:movie": "tsx tests/docs/movie.ts",
+    "docs:movie:install": "tsx tests/docs/movie-install.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.4",

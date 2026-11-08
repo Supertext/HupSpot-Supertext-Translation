@@ -55,7 +55,7 @@ The demo is a HubSpot account set up by hand (see `docs/DEVELOPER.md` → *Demo*
 
 ## Screenshots rule (always)
 
-The user guide and installation guide include screenshots, taken by `npm run docs:screenshots` (Playwright, `tests/docs/screenshots.ts`) against the stand-in HubSpot and Supertext APIs, which return real translations of the sample account (`tests/standin/samples.json`), stored in `docs/images/` at 1× scale with alt text, and regenerated in the same commit whenever the UI they show changes. Screenshots of HubSpot's own screens (language settings, a variant in the editor) are added from the demo account once it exists. No secrets, no customer data, no local URLs.
+The user guide and installation guide include screenshots, taken by `npm run docs:screenshots` (Playwright, `tests/docs/screenshots.ts`) against the stand-in HubSpot and Supertext APIs, which return real translations of the sample account (`tests/standin/samples.json`), stored in `docs/images/` at 1× scale with alt text, and regenerated in the same commit whenever the UI they show changes. The README's demo movie: `npm run docs:movie` (`tests/docs/movie.ts`, shared kit in `tests/docs/movie/`); the install and configuration movie: `npm run docs:movie:install` (`tests/docs/movie-install.ts`, same kit, MP4 only). Screenshots of HubSpot's own screens (language settings, a variant in the editor) are added from the demo account once it exists. No secrets, no customer data, no local URLs.
 
 ## Shared Supertext protocol
 

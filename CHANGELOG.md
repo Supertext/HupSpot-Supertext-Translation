@@ -5,6 +5,7 @@ All notable changes to Supertext Translation for HubSpot.
 ## Unreleased
 
 - Support: the Supertext support form is linked in the README, the user guide and GitHub's "New issue" page.
+- Docs: demo movie in the README (`docs/images/demo.gif`, recorded against the stand-ins with `npm run docs:movie`; the MP4 version, not committed, is narrated with the Piper voice “alba”) and an install and configuration movie (`npm run docs:movie:install`: connecting HubSpot, the API key, the language mapping, *Test connection*; narrated MP4, not committed).
 First version, tested on a real HubSpot account (17 October 2026: installing with OAuth, token refresh, blog posts into language variants and updating their drafts) and against a stand-in of the HubSpot APIs; pages, emails and the knowledge base still to be tried on a real account.
 
 - Hosted app installed in HubSpot with OAuth (`content` scope; the knowledge base scopes when the account has them). The HubSpot app definition is in `hubspot-project/` (developer platform 2026.09).

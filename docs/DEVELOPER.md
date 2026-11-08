@@ -38,7 +38,7 @@ scripts/vendor-sdk.sh     updates vendor/supertext-sdk
 scripts/vendor-plugin-health.sh  updates vendor/supertext-plugin-health
 vendor/supertext-sdk/     the Supertext SDK (TypeScript, built), the app's `supertext-sdk` dependency
 vendor/supertext-plugin-health/  Supertext Plugin Health (TypeScript, built), the app's `supertext-plugin-health` dependency
-tests/                    Vitest tests; standin/ (HubSpot and Supertext stand-ins, sample account); docs/screenshots.ts
+tests/                    Vitest tests; standin/ (HubSpot and Supertext stand-ins, sample account); docs/screenshots.ts, docs/movie*.ts (movies, kit in docs/movie/)
 ```
 
 ## How it fits into HubSpot
@@ -194,6 +194,25 @@ npm run docs:screenshots   # Playwright, 1× scale, into docs/images/
 ```
 
 `tests/docs/screenshots.ts` starts the stand-ins (the Supertext stand-in also as the review service, so nothing reaches the live one) and the app in-process, connects through the stand-in's OAuth and captures the app's pages (connect, settings, translate page, results, list afterwards, update warning, email results, German UI, the export section, the import form and its summary: the landing page exported as HTML, filled with the sample German and imported). It also checks that every page fits a 390 px phone screen and fails if one is wider. Editor links point at app.hubspot.com, never at the stand-in. Regenerate them in the same commit as any UI change they show. Chromium: Playwright's own (`npx playwright install chromium`) or `CHROME=/path/to/chrome`. Screenshots of HubSpot's own screens (language settings, a translated variant in the page editor) follow from the demo account.
+
+## Demo movie
+
+`docs/images/demo.gif` (at the top of the README) is recorded by `tests/docs/movie.ts` with Supertext's shared movie kit (`tests/docs/movie/movie-kit.mjs`, its types in `movie-kit.d.mts`, and `assets/`: intro and outro cards, caption bar, cursor, cuts the waiting time; Inter under the SIL OFL, `assets/fonts/Inter-LICENSE.txt`). Like the screenshots, it starts the stand-in HubSpot and Supertext APIs and the app in-process (`tests/docs/movie/env.ts`; the Supertext stand-in holds its status answers for 2.5 s so the waiting state is visible, and the movie cuts the wait), connects and saves the settings off camera, then shows, with a spoken line for every step (the GIF is silent): the website pages with *About us* in English, the page picked, German kept and Swiss French unticked, *Translate into 1 language with Supertext*, the waiting state, the result (*New version (draft)*, *Open in HubSpot*) and the list with the page translated into German. HubSpot's own editor isn't shown (the stand-in has no UI): editors open the draft there.
+
+```bash
+pip install piper-tts      # the voice (once)
+npm run docs:movie         # CHROME=/path/to/chrome as for the screenshots; MOVIE_PORT (default 8797)
+```
+
+The MP4 is narrated with [Piper](https://pypi.org/project/piper-tts/) (`pip install piper-tts`): the kit's `say()` speaks each step's line, shows its caption and holds until the line is finished; the time spent making the speech is cut. The voice model (63 MB, pinned revision, checked by SHA-256) downloads itself once into `tests/docs/movie/voice/` (git-ignored; never commit it). Without Piper, or with `MOVIE_VOICE=0`, the movie is made silent with the captions only.
+
+Voice: Piper voice “alba” (en_GB), trained on a dataset from the University of Edinburgh's Centre for Speech Technology Research, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+It needs `ffmpeg` and writes 1280×720 at 30 fps. The GIF (800 px, 12 fps, keep it under 3 MB) is committed; the MP4 (about 45 s) isn't: it goes to `tests/docs/movie/out/HubSpot-Supertext-Translation.mp4` (git-ignored) or to `MOVIE_OUT`. Record it again when the Translate page changes. The kit is the same in every Supertext plugin repo: don't restyle it here.
+
+### Install movie
+
+`tests/docs/movie-install.ts` (`npm run docs:movie:install`) records the install and configuration movie with the same kit, voice and stand-ins (MP4 only, no GIF). A hosted app has no install commands, so there is no terminal scene: it shows the connect page and *Connect HubSpot* (HubSpot's sign-in and consent screen isn't shown, the stand-in approves at once; one spoken line sums it up), then *Settings*: the API key field with the fake key `st-demo-0000-0000-0000` and where to get a key, *Languages* (content in English, German ticked, its *Supertext code* searched and set to *German (Germany) (de-DE)*, *Translation review* left off), *Save*, *Test connection*, and the *Translate* tab where editors start. The MP4 (about 80 s) goes to `tests/docs/movie/out/HubSpot-Supertext-Translation-install.mp4` (git-ignored) or to `MOVIE_OUT`; it isn't committed. Record it again when the connect page or the settings change.
 
 ## CI
 
