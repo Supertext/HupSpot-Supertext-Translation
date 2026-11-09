@@ -214,6 +214,38 @@ It needs `ffmpeg` and writes 1280×720 at 30 fps. The GIF (800 px, 12 fps, keep 
 
 `tests/docs/movie-install.ts` (`npm run docs:movie:install`) records the install and configuration movie with the same kit, voice and stand-ins (MP4 only, no GIF). A hosted app has no install commands, so there is no terminal scene: it shows the connect page and *Connect HubSpot* (HubSpot's sign-in and consent screen isn't shown, the stand-in approves at once; one spoken line sums it up), then *Settings*: the API key field with the fake key `st-demo-0000-0000-0000` and where to get a key, *Languages* (content in English, German ticked, its *Supertext code* searched and set to *German (Germany) (de-DE)*, *Translation review* left off), *Save*, *Test connection*, and the *Translate* tab where editors start. The MP4 (about 80 s) goes to `tests/docs/movie/out/HubSpot-Supertext-Translation-install.mp4` (git-ignored) or to `MOVIE_OUT`; it isn't committed. Record it again when the connect page or the settings change.
 
+## End-to-end tests
+
+`.github/workflows/e2e.yml` checks the app against the **real Supertext API**. There is no HubSpot account in CI (a real one would need the registered app and a user who signs in), so HubSpot is the stand-in (`tests/standin/hubspot.ts` with the sample account of `seed.ts`), and the checks read what the stand-in HubSpot received.
+
+What runs:
+
+1. `tests/e2e/features.mjs` asks the real API's `GET features` (no cost, no app or SDK code) whether it offers every pair the test translates: `en` → `de-CH`, `fr-CH`, `it-CH` (`E2E_SOURCE`, `E2E_TARGETS`).
+2. `tests/e2e/live.ts` starts the app and the stand-in HubSpot in its own process (in-memory store, `SUPERTEXT_API_KEY` from the GitHub secret, version reports off, `SUPERTEXT_REPORT_URL` on a stand-in) and uses the app's pages like an editor with Playwright: *Connect HubSpot* (the stand-in approves at once), Settings → English, `de-ch`, `fr-ch`, `it-ch` (each must preselect `de-CH`, `fr-CH`, `it-CH`), *Test connection* (the real key check; the key is never typed into the page), then on the Translate page the sample website page, landing page, blog post (German and French only: the sample blog has no Italian variant), marketing email and knowledge base article. It then checks in the stand-in HubSpot:
+   - exactly one language version per item and language, a draft (nothing published or sent), the originals untouched;
+   - every text the app translates (the app's own extraction, `extractItem`, decides which fields count) filled, and at least 80 % of them changed (unchanged ones are printed as `note`);
+   - HubL, links, bold, italics and list items kept; no protocol leftovers (`data-st-id`, `data-hs=`, `data-st-ph`, `st-ph-`);
+   - the text is in the target language (common-word count), `de-CH` without "ß";
+   - the job summary (*Done: 3 created …*) and no error in the job panel;
+   - translating the website page again with *Update existing versions* updates the same drafts in place (*3 updated*, no new items), checked again.
+3. The docs screenshots (`npm run docs:screenshots`) against the stand-in HubSpot and the stand-in Supertext API, as described under *Screenshots*. If the images differ from `docs/images/`, they are uploaded, and on `main` a second job opens or updates the pull request "Docs: regenerate screenshots" from the branch `automation/docs-screenshots`.
+
+Triggers: weekly (Mondays 06:09 UTC), pushes to `main` that change the app, its tests or the workflow, pull requests that change `tests/e2e/` or the workflow, and by hand (*Actions → E2E → Run workflow*).
+
+The secret `SUPERTEXT_API_KEY` (organization or repository secret, set by Remy) is the only place the key lives; sessions never use a live key. Without it, the real-API steps are skipped with a warning and only the screenshots run. Every run translates 5 items into 2–3 languages plus one update into 3 languages with that key.
+
+Not covered without a real HubSpot account: HubSpot's real OAuth and how its content APIs store language variants; check those with `npm run hubspot:probe` and on the demo account (see *Demo*).
+
+Locally (your own key, never a shared one):
+
+```bash
+SUPERTEXT_API_KEY=<your key> E2E_SOURCE=en E2E_TARGETS=de-CH,fr-CH,it-CH node tests/e2e/features.mjs
+SUPERTEXT_API_KEY=<your key> npx tsx tests/e2e/live.ts
+E2E_STANDIN=1 npx tsx tests/e2e/live.ts     # without a key: the stand-in Supertext API translates
+```
+
+The output has one `ok`/`FAIL`/`note` line per check; any `FAIL` makes it exit with 1. When a run fails, the artifact **e2e-debug** holds screenshots of the app after every translation (7 days). HTTP 429 (`RATE_LIMIT_EXCEEDED`) usually means other repos' runs used the shared key at the same time: re-run the failed job.
+
 ## CI
 
 `.github/workflows/ci.yml`: typecheck, tests, build, then `scripts/smoke.sh`: the built app against the stand-ins (OAuth with a cookie jar, settings, a website page and a marketing email translated into two languages, the drafts checked in the stand-in, an API call without a session refused).

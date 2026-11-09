@@ -1,0 +1,154 @@
+name: E2E
+
+# The app against the REAL Supertext API (secret SUPERTEXT_API_KEY): language list check and
+# the end-to-end test (tests/e2e). There is no HubSpot account in CI: the app talks to the
+# stand-in HubSpot (tests/standin), and the test checks the language versions it received.
+# Then the docs screenshots against the stand-in HubSpot AND Supertext APIs (tests/docs), so
+# the images don't change with every machine translation. Changed images become a pull request.
+# See "End-to-end tests" and "Screenshots" in docs/DEVELOPER.md.
+
+on:
+  workflow_dispatch:
+  # A pull request that changes the E2E test itself runs it before merging.
+  pull_request:
+    paths:
+      - 'tests/e2e/**'
+      - '.github/workflows/e2e.yml'
+  schedule:
+    - cron: '9 6 * * 1' # Mondays, 06:09 UTC
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'vendor/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig*.json'
+      - 'tests/**'
+      - '.github/workflows/e2e.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: E2E (live API) and screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      images-changed: ${{ steps.images.outputs.changed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Install the app and the test tools
+        run: |
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      # --- 1. Real Supertext API, stand-in HubSpot -------------------------------------------
+      - name: Check for the API key
+        id: key
+        env:
+          SUPERTEXT_API_KEY: ${{ secrets.SUPERTEXT_API_KEY }}
+        run: |
+          if [ -n "$SUPERTEXT_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Secret SUPERTEXT_API_KEY is not set: skipping the tests against the real Supertext API (see docs/DEVELOPER.md → End-to-end tests)."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Language list against the real API
+        if: steps.key.outputs.present == 'true'
+        env:
+          SUPERTEXT_API_KEY: ${{ secrets.SUPERTEXT_API_KEY }}
+          E2E_SOURCE: en
+          E2E_TARGETS: de-CH,fr-CH,it-CH
+        run: node tests/e2e/features.mjs
+
+      # The app and the stand-in HubSpot run inside the test (version reports off).
+      - name: End-to-end test against the real API
+        if: steps.key.outputs.present == 'true'
+        env:
+          SUPERTEXT_API_KEY: ${{ secrets.SUPERTEXT_API_KEY }}
+        run: npx tsx tests/e2e/live.ts
+
+      # --- 2. Docs screenshots against the stand-ins ---------------------------------------------
+      - name: Screenshots against the stand-in APIs
+        if: success() || failure()
+        run: npm run docs:screenshots
+
+      - name: Did the screenshots change?
+        id: images
+        if: success() || failure()
+        run: |
+          if [ -n "$(git status --porcelain docs/images)" ]; then
+            git status --short docs/images
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload the screenshots
+        if: steps.images.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docs-images
+          path: docs/images/
+
+      - name: Upload the result pages for debugging
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-debug
+          path: tests/e2e/artifacts/
+          retention-days: 7
+
+  screenshots-pr:
+    name: Pull request with new screenshots
+    needs: e2e
+    if: needs.e2e.outputs.images-changed == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: docs-images
+          path: docs/images/
+
+      - name: Push a branch and open (or update) the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          branch=automation/docs-screenshots
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b "$branch"
+          git add docs/images
+          git commit -m "Docs: regenerate screenshots" -m "Made by the E2E workflow: $RUN_URL"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "$branch"
+          if [ -z "$(gh pr list --repo "$REPO" --head "$branch" --state open --json number --jq '.[].number')" ]; then
+            gh pr create --repo "$REPO" --head "$branch" --base main \
+              --title "Docs: regenerate screenshots" \
+              --body "The E2E workflow took new screenshots of the app (against the stand-in APIs) and they differ from \`docs/images/\`. Check that the changes are intended before merging. Run: $RUN_URL"
+          fi
