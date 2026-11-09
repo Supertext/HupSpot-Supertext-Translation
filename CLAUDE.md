@@ -68,6 +68,7 @@ Lessons from the live API, apply them here: header `Authorization: Supertext-Aut
 ## This repo
 
 - Before committing: `npm run typecheck`, `npm test`, `npm run build`, `bash scripts/smoke.sh`.
+- End-to-end tests against the real Supertext API: `.github/workflows/e2e.yml` with `tests/e2e/` (the app and the stand-in HubSpot in the test's process, the real API; see "End-to-end tests" in `docs/DEVELOPER.md`). The key is only the GitHub secret `SUPERTEXT_API_KEY`, set by Remy; sessions don't use a live key. Behaviour changes need matching checks in `tests/e2e/live.ts`.
 - All Supertext API calls go through the Supertext SDK (`vendor/supertext-sdk`, `supertext-sdk/v1`) wrapped by `src/supertext/client.ts`; version reports through Supertext Plugin Health (`vendor/supertext-plugin-health`). Never edit `vendor/`: run `scripts/vendor-sdk.sh` / `scripts/vendor-plugin-health.sh <tag>`.
 - HubL (`{{ … }}`, `{% … %}`) must survive every translation: it travels as `<span data-hs="N">` placeholders and a segment that loses or doubles one is refused. Keep that check, and keep checking every segment before anything is written to HubSpot.
 - Nothing is ever published or sent: the app only writes drafts.
