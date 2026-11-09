@@ -1,6 +1,6 @@
 {
   "name": "hubspot-supertext-translation",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Supertext AI translation for HubSpot: language versions of website pages, landing pages, blog posts, marketing emails and knowledge base articles, as drafts in HubSpot.",
   "license": "MIT",
   "private": true,

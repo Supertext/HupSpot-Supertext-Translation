@@ -4,6 +4,10 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+## 1.0.0 — 2026-11-10
+
+First stable release. Every plugin release is now tested end to end against the live Supertext API (`.github/workflows/e2e.yml`).
+
 - Support: the Supertext support form is linked in the README, the user guide and GitHub's "New issue" page.
 - Docs: demo movie in the README (`docs/images/demo.gif`, recorded against the stand-ins with `npm run docs:movie`; the MP4 version, not committed, is narrated with the Piper voice “alba”) and an install and configuration movie (`npm run docs:movie:install`: connecting HubSpot, the API key, the language mapping, *Test connection*; narrated MP4, not committed).
 First version, tested on a real HubSpot account (17 October 2026: installing with OAuth, token refresh, blog posts into language variants and updating their drafts) and against a stand-in of the HubSpot APIs; pages, emails and the knowledge base still to be tried on a real account.
