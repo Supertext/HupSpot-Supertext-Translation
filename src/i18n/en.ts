@@ -139,8 +139,8 @@ export const en = {
   'settings.keyCheck.at': '(last checked {time} UTC)',
   'settings.ui.heading': "Interface language",
   'settings.ui.label': "Language of these pages",
-  'settings.ui.auto': "Automatic (your browser’s language)",
-  'settings.ui.help': "Applies to this browser only, so each colleague can choose their own. It doesn’t affect which languages your content is translated into.",
+  'settings.ui.auto': "Automatic (your browser's language)",
+  'settings.ui.help': "Applies to this browser only, so each colleague can choose their own. It doesn't affect which languages your content is translated into.",
   'settings.reports.heading': 'Supertext support',
   'settings.reports.label': 'Send version information to Supertext',
   'settings.reports.help':
